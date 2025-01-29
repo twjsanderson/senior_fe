@@ -62,7 +62,7 @@ Build in loading state and error state
 
 ## Enable user to search for different currency symbols
 
-Create a dropdown menu that allows the user to change the base currency (ie. usd) to any other valid currencies available from the APi
+Create a dropdown menu that allows the user to change the base currency (ie. usd) to any other valid currencies available from the API
 
 
 ## Enable user to sort by Symbol & Price
@@ -79,6 +79,10 @@ Make the UI more intertesting and clear for the user when sorting by Symbol & Pr
 
 Create a search bar that allows a user to search for a specific symbol
 It should filter progressively by each character the user enters and display the original list when the search bar is empty
+
+## Extra
+
+When a user chooses a different currency from the dropdown, the input bar should clear (if it was populated)
 
 
 # License 
