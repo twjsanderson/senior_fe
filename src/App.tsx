@@ -16,45 +16,41 @@ export default function App() {
   const [data, setData] = useState<CurrencyData>([[currency, 0]]);
   const [symbolDir, setSymbolDir] = useState<string>('+');
   const [priceDir, setPriceDir] = useState<string>('+');
-  const [sortType, setSortType] = useState<string>("");
+  const [sortType, setSortType] = useState<string>('');
+  const [searchInput, setSearchInput] = useState<string>("");
 
-  useEffect(() => {
-    fetch(
-      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json`
-    )
-      .then((res) => res.json())
-      .then((json) => {
-        const optionsArray: CurrencyOptions = Object.entries(json)
-        setOptions(optionsArray)
-      })
-      .catch((_: Error) => {
-        setError(true);
-      })
-      .finally(() => setLoading(false));
-  }, [])
 
-  const fetchData = () => {
-    fetch(
-      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${currency}.json`
-    )
+  const fetchData = (url: string, setter: Function) => {
+    fetch(url)
       .then((res) => res.json())
-      .then((json) => {
-        const pairsArray: CurrencyData = Object.entries(json[currency]);
-        setData(pairsArray);
-        setOriginalData(pairsArray);
-      })
-      .catch((_: Error) => {
-        setError(true);
-      })
+      .then((json) => setter(json))
+      .catch((_: Error) => setError(true))
       .finally(() => setLoading(false));
   }
 
+  const optionsSetter = (json: any) => {
+    const optionsArray: CurrencyOptions = Object.entries(json)
+    setOptions(optionsArray)
+  }
+
   useEffect(() => {
-    fetchData()
+    fetchData(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json`, optionsSetter)
+  }, [])
+
+  const currenciesSetter = (json: any) => {
+    const pairsArray: CurrencyData = Object.entries(json[currency]);
+    setData(pairsArray);
+    setOriginalData(pairsArray);
+  }
+
+  useEffect(() => {
+    fetchData(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${currency}.json`, currenciesSetter)
   }, [currency]);
 
   const changeCurrency = (event: any) => {
     setCurrency(event.target.value);
+    setSearchInput("");
+    filterData("")
   };
 
   const sortData = (sortType: string, direction: string) => {
@@ -79,8 +75,8 @@ export default function App() {
     setData(sortingTypes[sortType](direction));
   }
 
-  const filterData = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input: string = e.target.value
+  const filterData = (input: string) => {
+    setSearchInput(input);
     if (input === "") {
       setData(originalData);
     } else {
@@ -94,7 +90,7 @@ export default function App() {
   if (loading) return <h1>Loading...</h1>;
 
   return (
-    <div className="App">
+    <div style={{ marginLeft: "38%"}}>
       <h1>Currency Data</h1>
       <div>
         <h3>Choose currency</h3>
@@ -108,7 +104,7 @@ export default function App() {
       </div>
       <div>
         <h3>Search currencies by Symbol</h3>
-        <input onChange={filterData} />
+        <input value={searchInput} onChange={(e) => filterData(e.target.value)} />
       </div>
       {!error && !loading && data && currency && (
         <Currencies data={data} currency={currency} sortData={sortData} symbolDir={symbolDir} priceDir={priceDir} sortType={sortType} />
