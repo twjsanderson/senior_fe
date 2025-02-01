@@ -5,6 +5,8 @@ import Currencies from "./Currencies";
 // https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json
 
 export type CurrencyData = [string, number][];
+export type SortType = 'Symbol' | 'Price';
+export type SortDirection = '+' | '-';
 type CurrencyOptions = [string, string][];
 
 export default function App() {
@@ -14,16 +16,16 @@ export default function App() {
   const [options, setOptions] = useState<CurrencyOptions>([[currency, "1 Inch"]]);
   const [originalData, setOriginalData] = useState<CurrencyData>([[currency, 0]]);
   const [data, setData] = useState<CurrencyData>([[currency, 0]]);
-  const [symbolDir, setSymbolDir] = useState<string>('+');
-  const [priceDir, setPriceDir] = useState<string>('+');
-  const [sortType, setSortType] = useState<string>('');
+  const [sortingChoice, setSortingChoice] = useState<[SortType, SortDirection]>(['', '+']);
   const [searchInput, setSearchInput] = useState<string>("");
-
 
   const fetchData = (url: string, setter: Function) => {
     fetch(url)
       .then((res) => res.json())
-      .then((json) => setter(json))
+      .then((json) =>{
+        setLoading(true)
+        setter(json)
+      })
       .catch((_: Error) => setError(true))
       .finally(() => setLoading(false));
   }
@@ -32,16 +34,15 @@ export default function App() {
     const optionsArray: CurrencyOptions = Object.entries(json)
     setOptions(optionsArray)
   }
-
-  useEffect(() => {
-    fetchData(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json`, optionsSetter)
-  }, [])
-
   const currenciesSetter = (json: any) => {
     const pairsArray: CurrencyData = Object.entries(json[currency]);
     setData(pairsArray);
     setOriginalData(pairsArray);
   }
+
+  useEffect(() => {
+    fetchData(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.json`, optionsSetter)
+  }, [])
 
   useEffect(() => {
     fetchData(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${currency}.json`, currenciesSetter)
@@ -53,23 +54,15 @@ export default function App() {
     filterData("")
   };
 
-  const sortData = (sortType: string, direction: string) => {
-    const sortingTypes: { [key: string]: (direction: string) => [string, number][] } = {
-      "Symbol": (direction: string) => {
-        setSymbolDir(direction)
-        setSortType("Symbol")
-        if (direction === '+') {
-          return [...data].sort((a, b) =>  a[0].localeCompare(b[0]));
-        }
-        return [...data].sort((a, b) =>  b[0].localeCompare(a[0]));
+  const sortData = (sortType: SortType, direction: SortDirection) => {
+    const sortingTypes: { [key in SortType]: (direction: SortDirection) => CurrencyData} = {
+      Symbol: (direction: SortDirection) => {
+        setSortingChoice(['Symbol', direction])
+        return [...data].sort((a, b) => direction === '+' ? a[0].localeCompare(b[0]) : b[0].localeCompare(a[0]));
       },
-      "Price": (direction: string) => {
-        setPriceDir(direction)
-        setSortType("Price")
-        if (direction === '+') {
-          return [...data].sort((a, b) =>  a[1] - b[1]);
-        }
-        return [...data].sort((a, b) =>  b[1] - a[1]);
+      Price: (direction: SortDirection) => {
+        setSortingChoice(['Price', direction])
+        return [...data].sort((a, b) => direction === '+' ? a[1] - b[1] : b[1] - a[1]);
       }
     }
     setData(sortingTypes[sortType](direction));
@@ -106,9 +99,7 @@ export default function App() {
         <h3>Search currencies by Symbol</h3>
         <input value={searchInput} onChange={(e) => filterData(e.target.value)} />
       </div>
-      {!error && !loading && data && currency && (
-        <Currencies data={data} currency={currency} sortData={sortData} symbolDir={symbolDir} priceDir={priceDir} sortType={sortType} />
-      )}
+        <Currencies data={data} currency={currency} sortData={sortData} sortingChoice={sortingChoice} />
     </div>
   );
 }
